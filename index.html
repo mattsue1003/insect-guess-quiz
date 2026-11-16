@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>猜猜我是誰 台灣昆蟲朋友</title>
+<meta name="description" content="20 種台灣常見昆蟲的猜謎帶領網頁：看照片、一步一步打開提示、揭曉後聊知識與回憶，附真實鳴聲錄音與影片。設計者：愛迪樂 鍾孟修 職能治療師。">
+<meta property="og:title" content="猜猜我是誰 台灣昆蟲朋友">
+<meta property="og:description" content="獨角仙、蟬、螢火蟲、紡織娘……20 種昆蟲，按鈕一個一個打開提示，一起猜、一起聊。">
+<meta property="og:image" content="assets/img/rhino.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#fbfbf8;
+  --panel:rgba(255,255,255,.80);
+  --ink:#262725;
+  --ink2:#4a4b47;
+  --mute:#7b7c76;
+  --line:#2c2d2a;
+  --hair:#dcdcd5;
+  --soft:#f1f1ec;
+  --leaf:#3f6a4c;
+  --leaf-soft:#e7efe7;
+  --warn:#9a4a3a;
+  --warn-soft:#f6ebe7;
+  --font:"Noto Sans TC","PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
+  --latin:"Jost","Noto Sans TC",system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--font);font-size:19px;line-height:1.7;min-height:100vh;overflow-x:hidden}
+button{font-family:inherit;color:inherit}
+a{color:var(--leaf)}
+img{max-width:100%}
+
+/* ---------- 四周的昆蟲（參考圖：寫實昆蟲散落四周，部分淡化模糊） ---------- */
+#deco{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+#deco .bug{position:absolute;transform-origin:center;mix-blend-mode:multiply;transition:opacity .6s}
+#deco .leaf{position:absolute;border-radius:0 70% 0 70%;background:radial-gradient(120% 120% at 30% 30%,#7fae6a 0%,#4f8a4a 55%,#3a6d3a 100%);opacity:.55}
+#deco .leaf::after{content:"";position:absolute;left:50%;top:6%;bottom:6%;width:2px;background:rgba(255,255,255,.35);transform:rotate(-45deg) translateX(-50%);transform-origin:center}
+body.inner #deco{opacity:.28}
+body.inner #deco .bug.near{opacity:0}
+
+.app{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column}
+.view{display:none;flex:1}
+.view.on{display:flex;flex-direction:column;animation:fade .35s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ---------- 首頁：細黑方框＋半透明白板 ---------- */
+#home{align-items:center;justify-content:center;padding:6vh 16px 4vh}
+.frame{position:relative;width:min(760px,100%);padding:clamp(40px,7vw,78px) clamp(22px,6vw,70px);text-align:center}
+.frame::before{content:"";position:absolute;inset:4% -2% 0 6%;background:var(--panel);backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px);z-index:-1}
+.frame::after{content:"";position:absolute;inset:0;border:1.5px solid var(--line);pointer-events:none}
+.eyebrow{font-family:var(--latin);font-weight:300;font-size:clamp(13px,1.6vw,16px);letter-spacing:.55em;text-transform:uppercase;color:var(--mute);margin:0 0 18px;padding-left:.55em}
+.ttl{margin:0;font-weight:300;font-size:clamp(38px,7vw,70px);letter-spacing:.32em;padding-left:.32em;color:#3a3b38;line-height:1.25}
+.ttl-sub{margin:10px 0 0;font-weight:300;font-size:clamp(18px,2.6vw,24px);letter-spacing:.5em;padding-left:.5em;color:var(--ink2)}
+.lede{max-width:30em;margin:26px auto 0;font-size:clamp(15px,1.9vw,18px);color:var(--mute);line-height:1.9}
+.home-actions{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+.opts{display:flex;flex-direction:column;gap:12px;align-items:center;margin-top:26px;font-size:16px;color:var(--mute)}
+.opts>span{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center}
+.home-links{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:28px}
+
+/* ---------- 按鈕 ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 28px;border:1.5px solid var(--line);background:var(--ink);color:#fff;font-size:19px;letter-spacing:.12em;cursor:pointer;transition:background .2s,color .2s,transform .1s;text-decoration:none}
+.btn:hover{background:#000}
+.btn:active{transform:translateY(1px)}
+.btn svg{width:20px;height:20px}
+.btn.ghost{background:rgba(255,255,255,.85);color:var(--ink)}
+.btn.ghost:hover{background:#fff}
+.btn.small{min-height:44px;padding:0 18px;font-size:16px;letter-spacing:.08em}
+.btn:focus-visible,.hbtn:focus-visible,.chip:focus-visible,.seg button:focus-visible,.gitem:focus-visible,.icon-btn:focus-visible{outline:3px solid var(--leaf);outline-offset:3px}
+.seg{display:inline-flex;border:1px solid var(--hair);background:rgba(255,255,255,.9)}
+.seg button{border:0;background:transparent;padding:8px 16px;font-size:16px;cursor:pointer;color:var(--ink2);min-height:42px}
+.seg button+button{border-left:1px solid var(--hair)}
+.seg button.on{background:var(--ink);color:#fff}
+
+/* ---------- 內頁頂欄 ---------- */
+.bar{position:sticky;top:0;z-index:5;display:flex;align-items:center;gap:10px;padding:10px clamp(12px,3vw,28px);background:rgba(251,251,248,.92);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-bottom:1px solid var(--hair)}
+.brand{border:0;background:none;cursor:pointer;font-weight:300;letter-spacing:.28em;font-size:18px;color:#3a3b38;padding:6px 0;text-align:left}
+.brand small{display:block;font-family:var(--latin);font-size:11px;letter-spacing:.42em;color:var(--mute);text-transform:uppercase;line-height:1.2}
+.sp{flex:1}
+.pill{font-family:var(--latin);font-size:16px;letter-spacing:.12em;color:var(--mute);white-space:nowrap}
+.icon-btn{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 12px;border:1px solid var(--hair);background:#fff;cursor:pointer;font-size:16px}
+.icon-btn svg{width:18px;height:18px}
+.icon-btn:disabled{opacity:.35;cursor:default}
+
+/* ---------- 猜題 ---------- */
+.stage{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(18px,3vw,40px);padding:clamp(14px,3vw,34px);max-width:1380px;width:100%;margin:0 auto;align-items:start}
+.photo-wrap{position:relative;padding:14px 14px 0 0}
+.photo-wrap::after{content:"";position:absolute;inset:0 0 14px 14px;border:1.5px solid var(--line);pointer-events:none;z-index:2}
+.photo{position:relative;aspect-ratio:4/3;overflow:hidden;background:#e9e9e3}
+.photo img{width:100%;height:100%;object-fit:cover;display:block;transition:filter .7s ease,transform .7s ease}
+.photo.contain img{object-fit:contain;background:#fff}
+.qnum{position:absolute;left:30px;bottom:30px;z-index:3;font-family:var(--latin);font-weight:300;font-size:15px;letter-spacing:.3em;background:rgba(255,255,255,.88);padding:4px 12px;color:var(--ink2)}
+.zoomtag{position:absolute;right:28px;top:26px;z-index:3;font-size:14px;letter-spacing:.15em;background:rgba(255,255,255,.88);padding:3px 10px;color:var(--ink2)}
+.card{background:rgba(255,255,255,.92);border:1px solid var(--hair);padding:clamp(18px,2.4vw,28px)}
+.qhead{margin:0;font-weight:300;font-size:clamp(26px,3.2vw,38px);letter-spacing:.2em;line-height:1.35}
+.qsub{margin:6px 0 0;color:var(--mute);font-size:17px}
+.hint-btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:18px}
+.hbtn{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 14px;border:1px solid var(--line);background:#fff;font-size:19px;cursor:pointer;text-align:left;transition:background .2s}
+.hbtn:hover{background:var(--soft)}
+.hbtn .n{font-family:var(--latin);font-weight:400;font-size:15px;width:28px;height:28px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;flex:none}
+.hbtn.used{background:var(--soft);color:var(--mute);border-color:var(--hair)}
+.hbtn.used .n{background:var(--ink);color:#fff;border-color:var(--ink)}
+.hints{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
+.hints li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:#fff;border-left:3px solid var(--leaf);animation:fade .35s ease;font-size:20px;line-height:1.6}
+.tag{flex:none;font-size:14px;letter-spacing:.12em;border:1px solid var(--hair);padding:2px 8px;color:var(--ink2);margin-top:4px;white-space:nowrap}
+.empty-tip{margin:16px 0 0;font-size:15px;color:var(--mute);line-height:1.8}
+.kbd{font-family:var(--latin);border:1px solid var(--hair);padding:0 6px;font-size:13px;background:#fff}
+.reveal-row{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}
+.choices{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.choices button{min-height:50px;padding:0 20px;border:1px solid var(--line);background:#fff;font-size:20px;cursor:pointer}
+.choices button.right{background:var(--leaf);border-color:var(--leaf);color:#fff}
+.choices button.wrong{opacity:.4;text-decoration:line-through}
+.mini-play{border:1px solid var(--line);background:#fff;font-size:15px;padding:2px 10px;cursor:pointer;margin-left:6px}
+
+/* ---------- 答案 ---------- */
+.ans{max-width:1180px;width:100%;margin:0 auto;padding:clamp(14px,3vw,34px);display:flex;flex-direction:column;gap:18px}
+.ans-hero{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:clamp(18px,3vw,40px);align-items:center}
+.ans-hero .card{border:0;background:transparent;padding:0}
+.ans-eyebrow{font-size:17px;color:var(--mute);letter-spacing:.1em}
+.ans-name{margin:6px 0 2px;font-weight:300;font-size:clamp(44px,6vw,72px);letter-spacing:.24em;line-height:1.2}
+.ans-names{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin-top:14px;font-size:18px}
+.ans-names dt{color:var(--mute);font-size:15px;letter-spacing:.1em;padding-top:3px}
+.ans-names dd{margin:0}
+.ans-names .la{font-style:italic;font-family:var(--latin)}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.badge{font-size:15px;letter-spacing:.08em;padding:3px 12px;border:1px solid var(--hair);background:#fff;color:var(--ink2)}
+.badge.good{border-color:var(--leaf);color:var(--leaf);background:var(--leaf-soft)}
+.badge.pest{border-color:var(--warn);color:var(--warn);background:var(--warn-soft)}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+h3{margin:0 0 8px;font-weight:500;font-size:19px;letter-spacing:.14em;display:flex;align-items:center;gap:10px}
+h3::before{content:"";width:18px;height:1.5px;background:var(--line);flex:none}
+.card p{margin:0}
+.lc{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:10px;font-size:16px;color:var(--ink2)}
+.lc span{border:1px solid var(--hair);padding:2px 10px;background:#fff}
+.lc i{font-style:normal;color:var(--mute)}
+.lc span.on{border-color:var(--line);background:var(--ink);color:#fff}
+.facts{margin:0;padding-left:1.2em}
+.facts li{margin:6px 0}
+.talk{display:flex;flex-direction:column;gap:10px}
+.talk div{background:var(--soft);padding:10px 14px;font-size:19px}
+.talk .kidq{background:#fff;border:1px dashed var(--hair);font-size:17px;color:var(--ink2)}
+.player{display:flex;align-items:center;gap:14px;margin:10px 0}
+.pp{width:58px;height:58px;border-radius:50%;border:1.5px solid var(--line);background:var(--ink);color:#fff;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;flex:none}
+.pp svg{width:24px;height:24px}
+.track{flex:1;height:6px;background:var(--hair);cursor:pointer;position:relative}
+.track i{position:absolute;left:0;top:0;bottom:0;background:var(--ink);width:0}
+.tm{font-family:var(--latin);font-size:15px;color:var(--mute);min-width:42px}
+.credit{font-size:14px;color:var(--mute);line-height:1.7}
+.nosound{background:var(--soft);padding:12px 16px;font-size:18px}
+.linkrow{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
+.chip{display:inline-flex;align-items:center;gap:6px;min-height:42px;padding:0 14px;border:1px solid var(--line);background:#fff;font-size:16px;color:var(--ink);text-decoration:none;cursor:pointer}
+.chip:hover{background:var(--soft)}
+.chip svg{width:15px;height:15px}
+.chip.on{background:var(--ink);color:#fff}
+.vids{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
+.vid{display:block;text-decoration:none;color:inherit;background:#fff;border:1px solid var(--hair)}
+.vid .th{position:relative;aspect-ratio:16/9;background:#ddd;overflow:hidden;cursor:pointer}
+.vid .th img{width:100%;height:100%;object-fit:cover;display:block}
+.vid .th iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.vid .pl{position:absolute;left:50%;top:50%;width:64px;height:64px;margin:-32px 0 0 -32px;border-radius:50%;background:rgba(20,20,20,.72);color:#fff;display:flex;align-items:center;justify-content:center}
+.vid .pl svg{width:28px;height:28px;margin-left:3px}
+.vid .cap{padding:10px 12px;display:flex;flex-direction:column;gap:2px}
+.vid .cap b{font-weight:500;font-size:16px;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vid .cap span{font-size:14px;color:var(--mute)}
+.ans-nav{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin:8px 0 10px}
+
+/* ---------- 圖鑑／其他頁 ---------- */
+.wrap{max-width:1180px;width:100%;margin:0 auto;padding:clamp(16px,3vw,36px)}
+.page-title{margin:0;font-weight:300;font-size:clamp(28px,4vw,44px);letter-spacing:.24em;line-height:1.35}
+.page-eyebrow{font-family:var(--latin);font-weight:300;font-size:13px;letter-spacing:.5em;text-transform:uppercase;color:var(--mute);margin:0 0 6px}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0}
+.ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
+.gitem{display:flex;flex-direction:column;align-items:stretch;padding:0;border:1px solid var(--hair);background:#fff;cursor:pointer;text-align:left;transition:transform .15s,border-color .15s}
+.gitem:hover{border-color:var(--line);transform:translateY(-2px)}
+.gitem img{aspect-ratio:4/3;object-fit:cover;width:100%;display:block}
+.gitem b{font-weight:500;font-size:20px;letter-spacing:.12em;padding:8px 12px 0}
+.gitem span{font-family:var(--latin);font-style:italic;font-size:14px;color:var(--mute);padding:0 12px 10px}
+.gitem .done{position:absolute}
+.answer-box{font-size:19px;line-height:1.9}
+.db{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:16px}
+.db .card p{font-size:17px;color:var(--ink2)}
+table.cr{border-collapse:collapse;width:100%;font-size:15px}
+table.cr th,table.cr td{border-bottom:1px solid var(--hair);padding:7px 8px;text-align:left;vertical-align:top}
+table.cr th{font-weight:500;color:var(--ink2);white-space:nowrap}
+.steps{margin:0;padding-left:1.3em}
+.steps li{margin:6px 0}
+.sgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px;margin-top:14px}
+.sitem{background:#fff;border:1px solid var(--hair);padding:14px}
+.sitem .player{margin:4px 0 8px}
+.sitem .pp{width:50px;height:50px}
+.sitem .who{min-height:36px;font-size:18px}
+.sitem .who b{font-weight:500;letter-spacing:.1em}
+.sign{text-align:center;font-size:15px;letter-spacing:.14em;color:var(--mute);padding:26px 12px 30px}
+.sign b{font-weight:500;color:var(--ink2)}
+#home .sign{padding-bottom:0;margin-top:30px}
+
+@media (max-width:900px){
+  .stage,.ans-hero{grid-template-columns:1fr}
+  .grid3{grid-template-columns:1fr}
+}
+@media (max-width:700px){
+  body{font-size:18px}
+  .grid2,.db,.vids{grid-template-columns:1fr}
+  .hide-s{display:none}
+  .hint-btns{gap:8px}
+  .hbtn{font-size:17px;min-height:52px;padding:6px 10px}
+  .btn{min-height:50px;padding:0 20px;font-size:17px}
+  .brand{font-size:15px;letter-spacing:.18em}
+  .brand small{display:none}
+  .ggrid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .gitem b{font-size:17px}
+  .frame::before{inset:3% -1% 0 3%}
+  .ttl{letter-spacing:.2em;padding-left:.2em}
+  .eyebrow{letter-spacing:.35em}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div id="deco" aria-hidden="true"></div>
+<div class="app">
+
+<!-- 首頁 -->
+<section class="view on" id="home">
+  <div class="frame">
+    <p class="eyebrow">Guess the Insect</p>
+    <h1 class="ttl">猜猜我是誰</h1>
+    <p class="ttl-sub">台灣昆蟲朋友</p>
+    <p class="lede">20 種台灣常見的昆蟲。先看照片，按鈕一個一個打開提示，大家猜到了再揭曉答案，一起聊聊抓獨角仙、聽蟬叫、看螢火蟲的回憶。</p>
+    <div class="home-actions">
+      <button class="btn" data-go="start"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>開始猜昆蟲</button>
+      <button class="btn ghost" data-go="gallery">昆蟲圖鑑</button>
+    </div>
+    <div class="opts">
+      <span>玩法 <span class="seg" id="segMode"><button data-v="see" class="on">看照片猜</button><button data-v="blur">模糊照片</button><button data-v="zoom">局部特寫</button></span></span>
+      <span>順序 <span class="seg" id="segOrder"><button data-v="seq" class="on">依序</button><button data-v="rand">隨機</button></span></span>
+    </div>
+    <div class="home-links">
+      <button class="chip" data-go="sounds">昆蟲叫聲去哪裡聽？</button>
+      <button class="chip" data-go="guide">帶領說明・來源</button>
+    </div>
+    <div class="sign">設計者｜愛迪樂　<b>鍾孟修 職能治療師</b></div>
+  </div>
+</section>
+
+<!-- 猜題 -->
+<section class="view" id="quiz">
+  <div class="bar">
+    <button class="brand" data-go="home" aria-label="回首頁">猜猜我是誰<small>Guess the Insect</small></button>
+    <span class="sp"></span>
+    <span class="pill" id="qProg">1 / 20</span>
+    <button class="icon-btn" id="qPrev" aria-label="上一隻"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg><span class="hide-s">上一隻</span></button>
+    <button class="icon-btn" id="qNext" aria-label="下一隻"><span class="hide-s">下一隻</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5l7 7-7 7"/></svg></button>
+    <button class="icon-btn" data-go="gallery">圖鑑</button>
+  </div>
+  <div class="stage">
+    <div class="photo-wrap">
+      <div class="photo" id="qPhoto"><img id="qImg" alt="猜猜這是什麼昆蟲"></div>
+      <div class="qnum" id="qNum">01</div>
+      <div class="zoomtag" id="qZoom" style="display:none"></div>
+    </div>
+    <div class="card">
+      <h2 class="qhead">猜猜看，我是誰？</h2>
+      <p class="qsub">按下按鈕，一次打開一個提示。猜到了就揭曉！</p>
+      <div class="hint-btns" id="hintBtns"></div>
+      <ul class="hints" id="hintList"></ul>
+      <p class="empty-tip" id="emptyTip">小技巧：先讓大家自由說說看「牠長什麼樣子、在哪裡看過」，再打開第一個提示。<br>鍵盤：<span class="kbd">空白鍵</span> 下一個提示　<span class="kbd">Enter</span> 揭曉　<span class="kbd">→</span> 下一隻</p>
+      <div class="reveal-row">
+        <button class="btn" id="revealBtn">揭曉答案</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 答案 -->
+<section class="view" id="answer">
+  <div class="bar">
+    <button class="brand" data-go="home" aria-label="回首頁">猜猜我是誰<small>Guess the Insect</small></button>
+    <span class="sp"></span>
+    <span class="pill" id="aProg">1 / 20</span>
+    <button class="icon-btn" id="aBack"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 5l-7 7 7 7"/></svg><span class="hide-s">回到提示</span></button>
+    <button class="btn small" id="aNext">下一隻</button>
+  </div>
+  <div class="ans" id="ansBody"></div>
+</section>
+
+<!-- 圖鑑 -->
+<section class="view" id="gallery">
+  <div class="bar">
+    <button class="brand" data-go="home" aria-label="回首頁">猜猜我是誰<small>Guess the Insect</small></button>
+    <span class="sp"></span>
+    <button class="btn small" data-go="start">開始猜</button>
+  </div>
+  <div class="wrap">
+    <p class="page-eyebrow">Field Guide</p>
+    <h2 class="page-title">20 位昆蟲朋友</h2>
+    <p class="qsub">點一隻昆蟲，直接從牠開始猜；也可以只挑一類來玩，例如今天只玩「會唱歌的蟲」。</p>
+    <div class="filters" id="gFilter"></div>
+    <div class="ggrid" id="gGrid"></div>
+  </div>
+</section>
+
+<!-- 叫聲資料庫 -->
+<section class="view" id="sounds">
+  <div class="bar">
+    <button class="brand" data-go="home" aria-label="回首頁">猜猜我是誰<small>Guess the Insect</small></button>
+    <span class="sp"></span>
+    <button class="btn small" data-go="start">開始猜</button>
+  </div>
+  <div class="wrap">
+    <p class="page-eyebrow">Insect Sounds</p>
+    <h2 class="page-title">有沒有昆蟲叫聲資料庫？</h2>
+    <div class="card" style="margin-top:16px">
+      <p class="answer-box"><b>有，但比鳥叫聲少很多。</b>原因很簡單：大部分昆蟲<b>根本不會叫</b>。真正會「唱歌」的主要是<b>蟬、蟋蟀、螽斯（紡織娘）、螻蛄</b>這幾類；蜜蜂、虎頭蜂、蒼蠅、蚊子聽到的「嗡嗡」聲是<b>翅膀拍動</b>的聲音；天牛、獨角仙被抓時偶爾會發出摩擦聲；螢火蟲、蝴蝶、瓢蟲、蜻蜓則幾乎沒有聲音。<br>本網頁只放<b>真的找得到公開授權錄音</b>的 4 種（蟬、蟋蟀、紡織娘、蜜蜂），其他昆蟲會老實告訴你「牠不會叫」或「找不到可靠的錄音」，不會用假的聲音充數。</p>
+    </div>
+    <div class="db">
+      <div class="card"><h3>xeno-canto 鳴聲資料庫</h3><p>原本是鳥聲資料庫，現在也收錄<b>直翅目（蟋蟀、螽斯、蝗蟲）和蟬</b>的錄音，大多是 CC 創用授權、可直接在網頁播放，還有 API。台灣的昆蟲錄音目前不多，但已經有台灣油葫蘆、螻蛄等。</p><div class="linkrow"><a class="chip" href="https://xeno-canto.org/explore?query=grp%3Agrasshoppers%20cnt%3ATaiwan" target="_blank" rel="noopener">台灣錄的蟲聲 ↗</a><a class="chip" href="https://xeno-canto.org/explore?query=grp%3Agrasshoppers" target="_blank" rel="noopener">全世界的蟋蟀・螽斯 ↗</a></div></div>
+      <div class="card"><h3>Wikimedia Commons 維基共享資源</h3><p>有很多可自由使用的昆蟲錄音，包含英國自然史博物館 BioAcoustica 計畫上傳的大量昆蟲聲音，以及台灣網友錄的熊蟬、寒蟬。授權清楚，適合教學引用。</p><div class="linkrow"><a class="chip" href="https://commons.wikimedia.org/w/index.php?search=insect+sound+filetype%3Aaudio&ns6=1" target="_blank" rel="noopener">搜尋昆蟲錄音 ↗</a><a class="chip" href="https://commons.wikimedia.org/wiki/File:Tsutsubo.ogg" target="_blank" rel="noopener">台灣的寒蟬 ↗</a></div></div>
+      <div class="card"><h3>麥考利圖書館 Macaulay Library</h3><p>康乃爾大學鳥類研究室的聲音典藏，除了鳥，也有昆蟲、青蛙等動物錄音，品質很好。授權較嚴格，請在他們的網站上播放，不要下載轉貼。</p><div class="linkrow"><a class="chip" href="https://search.macaulaylibrary.org/catalog?mediaType=audio" target="_blank" rel="noopener">麥考利 聲音搜尋 ↗</a></div></div>
+      <div class="card"><h3>SINA 北美鳴蟲資料庫</h3><p>Singing Insects of North America，專門整理蟋蟀、螽斯、蟬的叫聲與聲譜圖，教學說明做得很好。但收錄的是北美洲的種類，不是台灣的昆蟲，適合拿來了解「蟲是怎麼叫的」。</p><div class="linkrow"><a class="chip" href="https://orthsoc.org/sina/" target="_blank" rel="noopener">SINA 網站 ↗</a></div></div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <h3>聽聲音猜猜看</h3>
+      <p style="font-size:17px;color:var(--ink2)">先播放、讓大家猜是哪一種蟲，再按「看答案」。</p>
+      <div class="sgrid" id="sGame"></div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <h3>20 種昆蟲的聲音一覽</h3>
+      <div style="overflow:auto"><table class="cr" id="sndTable"></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- 帶領說明 -->
+<section class="view" id="guide">
+  <div class="bar">
+    <button class="brand" data-go="home" aria-label="回首頁">猜猜我是誰<small>Guess the Insect</small></button>
+    <span class="sp"></span>
+    <button class="btn small" data-go="start">開始猜</button>
+  </div>
+  <div class="wrap">
+    <p class="page-eyebrow">For Facilitators</p>
+    <h2 class="page-title">給帶領者的活動說明</h2>
+    <div class="grid2" style="margin-top:16px">
+      <div class="card"><h3>怎麼帶（30–45 分鐘）</h3>
+        <ol class="steps">
+          <li>用投影或大電視開啟本頁，選玩法：長輩建議「看照片猜」；小朋友可以玩「模糊照片」或「局部特寫」。</li>
+          <li>先不給提示，請大家說說看「牠是什麼顏色、多大、在哪裡看過」。</li>
+          <li>猜不到就按提示：體型 → 顏色 → 在哪裡看到 → 吃什麼 → 聲音 → 驚人的事 → 名字字數。卡住時可以按「給三個選項」。</li>
+          <li>揭曉後，挑 1–2 個小知識講，再用「聊一聊」的題目讓大家分享回憶。</li>
+          <li>有錄音的昆蟲（蟬、蟋蟀、紡織娘、蜜蜂）一起聽聽看、學學看；其他昆蟲可以看一小段影片。</li>
+        </ol></div>
+      <div class="card"><h3>帶領小撇步</h3>
+        <ol class="steps">
+          <li>一次玩 6–8 種就夠，留時間聊天比答對更重要。</li>
+          <li>長輩常用台語名或小名（火金姑、田嬰、草猴、肚猴、狗蟻、牛角踒），說出小名也算答對。</li>
+          <li>失智症長輩可改用「給三個選項」，降低挫折感。</li>
+          <li>搭配動作：學蟬「唧——」、學螢火蟲用手一閃一閃、學螳螂舉鐮刀、學蜜蜂跳 8 字舞，順便活動身體。</li>
+          <li>對怕蟲的長輩，先從蝴蝶、螢火蟲、瓢蟲這些「可愛的」開始。</li>
+          <li>影片在 GitHub 網頁版可以直接播放；若網路不穩，先播本頁內建的錄音。</li>
+        </ol></div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <h3>照片來源與授權</h3>
+      <p class="credit" style="margin-bottom:10px">照片皆來自維基共享資源（Wikimedia Commons），依各自授權標示作者；網頁上為縮小、裁切後的版本。四周的裝飾昆蟲同樣來自 Commons（多為法國土魯斯自然史博物館 MHNT 標本照，Didier Descouens 攝），已去背。</p>
+      <div style="overflow:auto"><table class="cr" id="imgTable"></table></div>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <h3>錄音與影片</h3>
+      <p class="credit">4 段錄音取自 Wikimedia Commons 與 xeno-canto，依各自 CC 授權使用，只剪取前 30 秒並調整音量（詳見「昆蟲叫聲」頁）。影片皆連結 YouTube 原頻道、版權屬原作者，每支都已確認為公開且允許嵌入播放。</p>
+    </div>
+    <div class="card" style="margin-top:18px">
+      <h3>內容說明</h3>
+      <p class="credit">昆蟲中文名以台灣常用名稱為主，括號內為照片的正式種名；體長為大約數字，方便口頭比較。「益蟲／害蟲」是以人的角度做的簡單分類，在大自然裡每種昆蟲都有牠的角色。保育等級如有更新，以農業部公告為準。</p>
+    </div>
+  </div>
+</section>
+
+<div class="sign" id="footSign" style="display:none">設計者｜愛迪樂　<b>鍾孟修 職能治療師</b></div>
+</div>
+
+<audio id="aud" preload="none"></audio>
+<script src="data/insects.js"></script>
+<script src="data/media.js"></script>
+<script>
+(function(){
+"use strict";
+const B = window.INSECTS, M = window.MEDIA, NOTE = window.SOUND_NOTE||{};
+const $ = s=>document.querySelector(s), $$ = s=>[...document.querySelectorAll(s)];
+const esc = s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const store = {get(k,d){try{const v=localStorage.getItem("insq_"+k);return v==null?d:JSON.parse(v)}catch(e){return d}},set(k,v){try{localStorage.setItem("insq_"+k,JSON.stringify(v))}catch(e){}}};
+const host = location.hostname;
+const CAN_EMBED = /github\.io$/.test(host) || host==="localhost" || host==="127.0.0.1";
+const GROUP = {beetle:"甲蟲家族",singer:"會唱歌的蟲",hunter:"捕蟲獵人",butterfly:"蝴蝶",social:"蜂蟻大家族",plant:"葉子上的蟲"};
+const ROLE = {good:"益蟲",pest:"害蟲",both:"有益也有害",neutral:"中性"};
+const META = {full:{t:"完全變態",s:["卵","幼蟲","蛹","成蟲"]},half:{t:"不完全變態",s:["卵","若蟲","成蟲"]}};
+const IC_PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>', IC_PAUSE='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>';
+const ICON_EXT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 01-1 1H5a1 1 0 01-1-1V7a1 1 0 011-1h5"/></svg>';
+
+/* ---------- 四周的昆蟲 ---------- */
+// x,y：中心位置（%）；w：寬（vmin）；r：旋轉；b：模糊 px；o：不透明度；near：靠中間（內頁隱藏）
+const DECO_LAYOUT = [
+  {leaf:1,x:6,y:10,w:30,r:-20,b:0,o:.55},
+  {leaf:1,x:96,y:62,w:26,r:140,b:3,o:.35},
+  {leaf:1,x:10,y:92,w:22,r:60,b:5,o:.3},
+  {s:"cet",x:9,y:13,w:13,r:-28,b:0,o:1},
+  {s:"calop",x:40,y:5,w:20,r:12,b:2.5,o:.35,near:1},
+  {s:"papilio",x:91,y:12,w:22,r:28,b:0,o:.95},
+  {s:"stag",x:6,y:52,w:15,r:-70,b:0,o:1},
+  {s:"acro",x:28,y:44,w:14,r:15,b:6,o:.18,near:1},
+  {s:"chryso",x:93,y:42,w:10,r:-35,b:0,o:1},
+  {s:"lady",x:89,y:84,w:15,r:-18,b:0,o:1},
+  {s:"rhino",x:30,y:93,w:22,r:-8,b:0,o:.95},
+  {s:"dorcus",x:68,y:95,w:12,r:150,b:4,o:.35},
+  {s:"calop",x:74,y:30,w:16,r:-50,b:7,o:.15,near:1},
+  {s:"cet",x:60,y:72,w:10,r:40,b:8,o:.13,near:1},
+  {s:"papilio",x:10,y:30,w:14,r:-25,b:5,o:.25},
+];
+function deco(){
+  const box=$("#deco"); const narrow=innerWidth<700;
+  box.innerHTML=DECO_LAYOUT.filter(d=>!(narrow&&d.near)).map(d=>{
+    const w=(narrow?d.w*0.75:d.w);
+    const st=`left:${d.x}%;top:${d.y}%;width:${w}vmin;transform:translate(-50%,-50%) rotate(${d.r}deg);opacity:${d.o};${d.b?`filter:blur(${d.b}px)`:""}`;
+    if(d.leaf) return `<div class="leaf" style="${st};height:${w*0.55}vmin;${d.b?`filter:blur(${d.b}px)`:""}"></div>`;
+    return `<img class="bug${d.near?" near":""}" src="assets/deco/${d.s}.webp" alt="" style="${st}" loading="lazy">`;
+  }).join("");
+}
+deco(); let rT; addEventListener("resize",()=>{clearTimeout(rT);rT=setTimeout(deco,250)});
+
+/* ---------- 狀態 ---------- */
+const st = { mode: store.get("mode","see"), order: store.get("order","seq"), list: B.map((_,i)=>i), pos:0, used:[], filter:"all" };
+function segInit(id,key){
+  $$(`#${id} button`).forEach(b=>{b.classList.toggle("on",b.dataset.v===st[key]);b.onclick=()=>{st[key]=b.dataset.v;store.set(key,st[key]);$$(`#${id} button`).forEach(x=>x.classList.toggle("on",x===b))}});
+}
+segInit("segMode","mode"); segInit("segOrder","order");
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+const inFilter=(b,f)=>f==="all"||b.group===f||(f==="good"&&b.role==="good")||(f==="pest"&&b.role==="pest");
+function buildList(startKey){
+  let idx = B.map((b,i)=>i).filter(i=>inFilter(B[i],st.filter));
+  if(st.order==="rand") shuffle(idx);
+  if(startKey){const k=B.findIndex(b=>b.key===startKey);idx=idx.filter(i=>i!==k);idx.unshift(k)}
+  st.list=idx; st.pos=0;
+}
+
+/* ---------- 換頁 ---------- */
+function show(id){
+  $$(".view").forEach(v=>v.classList.toggle("on",v.id===id));
+  $("#footSign").style.display = id==="home"?"none":"block";
+  document.body.classList.toggle("inner", id!=="home");
+  scrollTo(0,0); stopAudio();
+  if(id==="home") history.replaceState(null,"",location.pathname+location.search);
+}
+document.addEventListener("click",e=>{
+  const g=e.target.closest("[data-go]"); if(!g) return;
+  const v=g.dataset.go;
+  if(v==="start"){ if(!$("#gallery").classList.contains("on")) st.filter="all"; buildList(); openQuiz(); }
+  else { show(v); if(v==="gallery") renderGallery(); }
+});
+
+/* ---------- 音訊 ---------- */
+const aud=$("#aud");
+const fmt=s=>{s=Math.floor(s||0);return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+function stopAudio(){aud.pause();try{aud.currentTime=0}catch(e){}setIcons()}
+function setIcons(){const on=!aud.paused;$$("[data-pp]").forEach(b=>{b.innerHTML=(on&&b.dataset.pp===aud.dataset.k)?IC_PAUSE:IC_PLAY});$$("[data-play]").forEach(b=>b.textContent=(on&&b.dataset.play===aud.dataset.k)?"■ 停止":"▶ 播放聲音")}
+function toggleAudio(k){
+  if(!aud.paused && aud.dataset.k===k){aud.pause();setIcons();return}
+  if(aud.dataset.k!==k){aud.src="assets/audio/"+k+".mp3";aud.dataset.k=k}
+  aud.play().then(setIcons).catch(setIcons);
+}
+aud.addEventListener("ended",setIcons); aud.addEventListener("pause",setIcons);
+aud.addEventListener("timeupdate",()=>{$$(`[data-track="${aud.dataset.k}"] i`).forEach(t=>{if(aud.duration)t.style.width=(aud.currentTime/aud.duration*100)+"%"});$$(`[data-tm="${aud.dataset.k}"]`).forEach(t=>t.textContent=fmt(aud.currentTime))});
+function playerHTML(k){return `<div class="player"><button class="pp" data-pp="${k}" aria-label="播放">${IC_PLAY}</button><div class="track" data-track="${k}"><i></i></div><span class="tm" data-tm="${k}">0:00</span></div>`}
+function bindPlayers(root){
+  root.querySelectorAll("[data-pp]").forEach(b=>b.onclick=()=>toggleAudio(b.dataset.pp));
+  root.querySelectorAll("[data-track]").forEach(t=>t.onclick=e=>{const k=t.dataset.track;if(aud.dataset.k!==k){toggleAudio(k);return}const r=t.getBoundingClientRect();if(aud.duration)aud.currentTime=(e.clientX-r.left)/r.width*aud.duration});
+}
+
+/* ---------- 猜題 ---------- */
+const HINTS=[
+  {k:"size",label:"看體型",tag:"體型"},
+  {k:"color",label:"看顏色",tag:"顏色"},
+  {k:"place",label:"在哪裡看到",tag:"在哪裡"},
+  {k:"food",label:"吃什麼",tag:"吃什麼"},
+  {k:"sound",label:"會不會叫",tag:"聲音"},
+  {k:"fact",label:"驚人的事",tag:"驚人的事"},
+  {k:"len",label:"名字字數",tag:"名字"},
+];
+const cur=()=>B[st.list[st.pos]];
+const nUsed=()=>st.used.filter(k=>k!=="choice").length;
+function applyPhoto(){
+  const img=$("#qImg"), n=nUsed();
+  let f="none", t="none";
+  if(st.mode==="blur"){const px=[24,18,13,9,5,3,1,0][Math.min(n,7)]; if(px){f=`blur(${px}px) saturate(.9)`;t="scale(1.1)"}}
+  if(st.mode==="zoom"){const z=[3.4,2.8,2.3,1.9,1.55,1.3,1.12,1][Math.min(n,7)]; t=`scale(${z})`; $("#qZoom").style.display=z>1?"":"none"; $("#qZoom").textContent=`放大 ${z.toFixed(1)} 倍`}
+  else $("#qZoom").style.display="none";
+  img.style.filter=f; img.style.transform=t;
+}
+function openQuiz(){
+  const b=cur(); st.used=[]; stopAudio();
+  const img=$("#qImg"); img.style.transition="none"; img.src="assets/img/"+b.key+".jpg"; img.style.transformOrigin=b.focus||"50% 50%";
+  $("#qPhoto").classList.toggle("contain", b.key==="stag");
+  $("#qProg").innerHTML=`<span class="hide-s">第 </span>${st.pos+1}<span class="hide-s"> 隻</span> / ${st.list.length}`;
+  $("#qNum").textContent=String(st.pos+1).padStart(2,"0")+" / "+String(st.list.length).padStart(2,"0");
+  $("#hintList").innerHTML=""; $("#emptyTip").style.display="";
+  $("#hintBtns").innerHTML = HINTS.map((h,i)=>`<button class="hbtn" data-h="${h.k}"><span class="n">${i+1}</span>${h.label}</button>`).join("")+`<button class="hbtn" data-h="choice"><span class="n">?</span>給三個選項</button>`;
+  $$("#hintBtns .hbtn").forEach(x=>x.onclick=()=>reveal(x.dataset.h));
+  $("#qPrev").disabled = st.pos===0;
+  applyPhoto(); requestAnimationFrame(()=>requestAnimationFrame(()=>{img.style.transition=""}));
+  show("quiz");
+  history.replaceState(null,"","#"+b.key);
+}
+function reveal(k){
+  const b=cur(); if(st.used.includes(k)) return;
+  st.used.push(k);
+  $(`#hintBtns [data-h="${k}"]`).classList.add("used");
+  $("#emptyTip").style.display="none";
+  const h=HINTS.find(x=>x.k===k);
+  let html="";
+  if(k==="len"){ const n=[...b.name].length; html=`名字有 <b>${n}</b> 個字，第一個字是「<b>${esc([...b.name][0])}</b>」。`+(b.alias?`<br>別名或小名：「${esc(b.alias)}」。`:""); }
+  else if(k==="choice"){ html=`是哪一個？<div class="choices">${choicesFor(b).map(n=>`<button data-c="${esc(n)}">${esc(n)}</button>`).join("")}</div>`; }
+  else if(k==="sound"){ html=esc(b.hints.sound)+(M[b.key].snd?` <button class="mini-play" data-play="${b.key}">▶ 播放聲音</button>`:""); }
+  else html=esc(b.hints[k]);
+  const li=document.createElement("li");
+  li.innerHTML=`<span class="tag">${h?h.tag:"選項"}</span><div>${html}</div>`;
+  $("#hintList").appendChild(li);
+  li.querySelectorAll(".choices button").forEach(c=>c.onclick=()=>{
+    if(c.dataset.c===b.name){c.classList.add("right");setTimeout(()=>showAnswer(),700)}else c.classList.add("wrong");
+  });
+  const pb=li.querySelector("[data-play]"); if(pb) pb.onclick=()=>toggleAudio(b.key);
+  li.scrollIntoView({block:"nearest",behavior:"smooth"});
+  applyPhoto();
+}
+function choicesFor(b){
+  const others=shuffle(B.filter(x=>x.key!==b.key)); const pick=[b.name];
+  const pool=[...others.filter(x=>x.group===b.group),...others];
+  for(const x of pool){ if(pick.length>=3) break; if(!pick.includes(x.name)) pick.push(x.name) }
+  return shuffle(pick);
+}
+function nextHint(){ const h=HINTS.find(h=>!st.used.includes(h.k)); if(h) reveal(h.k); }
+$("#revealBtn").onclick=()=>showAnswer();
+$("#qPrev").onclick=()=>{ if(st.pos>0){st.pos--;openQuiz()} };
+$("#qNext").onclick=()=>goNext();
+function goNext(){ if(st.pos<st.list.length-1){st.pos++;openQuiz()} else { show("gallery"); renderGallery(); } }
+
+/* ---------- 答案 ---------- */
+function showAnswer(){
+  const b=cur(), m=M[b.key]; stopAudio();
+  const n=nUsed();
+  const praise = n<=1?"厲害！幾乎不用提示就猜到了":n<=3?`用了 ${n} 個提示猜到了`:`用了 ${n} 個提示，大家一起想出來了`;
+  const mt=META[b.meta];
+  const lc=mt.s.map(s=>`<span>${s}</span>`).join("<i>→</i>");
+  const vids=m.yt.map(v=>{
+    const th=`https://i.ytimg.com/vi/${v.id}/hqdefault.jpg`, url=`https://www.youtube.com/watch?v=${v.id}`;
+    if(CAN_EMBED) return `<div class="vid"><div class="th" data-yt="${v.id}" role="button" tabindex="0" aria-label="播放影片"><img src="${th}" alt="" loading="lazy" onerror="this.remove()"><span class="pl">${IC_PLAY}</span></div><div class="cap"><b>${esc(v.title)}</b><span>${esc(v.ch)}・<a href="${url}" target="_blank" rel="noopener">在 YouTube 開啟 ↗</a></span></div></div>`;
+    return `<a class="vid" href="${url}" target="_blank" rel="noopener"><div class="th"><img src="${th}" alt="" loading="lazy" onerror="this.remove()"><span class="pl">${IC_PLAY}</span></div><div class="cap"><b>${esc(v.title)}</b><span>${esc(v.ch)}・到 YouTube 觀看 ↗</span></div></a>`;
+  }).join("");
+  const roleCls=b.role==="good"?"good":b.role==="pest"?"pest":"";
+  const lic = m.img.licurl?`<a href="${m.img.licurl}" target="_blank" rel="noopener">${esc(m.img.lic)}</a>`:esc(m.img.lic);
+  let sound;
+  if(m.snd){
+    const s=m.snd;
+    sound=`${playerHTML(b.key)}<p style="font-size:17px">${esc(s.note)}</p><p class="credit">錄音：${esc(s.rec)}${s.where?`（${esc(s.where)}錄音）`:""}，<a href="${s.url}" target="_blank" rel="noopener">${esc(s.src)}</a>，<a href="${s.licurl}" target="_blank" rel="noopener">${esc(s.lic)}</a>；本頁剪取前 30 秒並調整音量。</p>`;
+  } else sound=`<p class="nosound">${esc(NOTE[b.key]||"這種昆蟲沒有可以播放的錄音。")}</p>`;
+  const sq=encodeURIComponent(b.name+" 昆蟲");
+  const more=[
+    `<a class="chip" href="https://www.google.com/search?tbm=isch&q=${sq}" target="_blank" rel="noopener">${ICON_EXT}Google 圖片</a>`,
+    `<a class="chip" href="https://www.youtube.com/results?search_query=${encodeURIComponent(b.name+" #shorts")}" target="_blank" rel="noopener">${ICON_EXT}YouTube 短影音</a>`,
+    `<a class="chip" href="https://zh.wikipedia.org/w/index.php?variant=zh-tw&search=${encodeURIComponent(b.formal.split("（")[0])}" target="_blank" rel="noopener">${ICON_EXT}維基百科</a>`,
+  ];
+  if(b.group==="singer") more.push(`<a class="chip" href="https://xeno-canto.org/explore?query=${encodeURIComponent(b.sci.split(" ")[0])}" target="_blank" rel="noopener">${ICON_EXT}xeno-canto 更多錄音</a>`);
+  $("#ansBody").innerHTML=`
+  <div class="ans-hero">
+    <div class="photo-wrap"><div class="photo${b.key==="stag"?" contain":""}"><img src="assets/img/${b.key}.jpg" alt="${esc(b.name)}"></div></div>
+    <div class="card">
+      <div class="ans-eyebrow">${esc(praise)}，答案是</div>
+      <div class="ans-name">${esc(b.name)}</div>
+      <dl class="ans-names">
+        ${b.formal!==b.name?`<dt>照片種類</dt><dd>${esc(b.formal)}</dd>`:""}
+        <dt>英文</dt><dd>${esc(b.en)}</dd>
+        <dt>學名</dt><dd class="la">${esc(b.sci)}</dd>
+        ${b.alias?`<dt>別名</dt><dd>${esc(b.alias)}</dd>`:""}
+      </dl>
+      <div class="badges"><span class="badge ${roleCls}">${ROLE[b.role]}</span><span class="badge">${GROUP[b.group]}</span><span class="badge">${mt.t}</span></div>
+    </div>
+  </div>
+  <div class="grid3">
+    <div class="card"><h3>在台灣哪裡看得到</h3><p>${esc(b.where)}</p></div>
+    <div class="card"><h3>吃什麼</h3><p>${esc(b.diet)}</p></div>
+    <div class="card"><h3>益蟲還是害蟲</h3><p>${esc(b.roleText)}</p></div>
+  </div>
+  <div class="card"><h3>一生怎麼長大：${mt.t}</h3><div class="lc">${lc}</div><p class="credit" style="margin-top:8px">${b.meta==="full"?"寶寶（幼蟲）和大人長得完全不一樣，中間要經過「蛹」的階段。":"沒有蛹的階段，寶寶（若蟲）長得像縮小版的大人，脫幾次皮就長大了。"}</p></div>
+  <div class="grid2">
+    <div class="card"><h3>有趣小知識</h3><ul class="facts">${b.facts.map(f=>`<li>${esc(f)}</li>`).join("")}</ul></div>
+    <div class="card"><h3>聊一聊</h3><div class="talk">${b.talk.map(t=>`<div>${esc(t)}</div>`).join("")}<div class="kidq">考考小朋友：${esc(b.kid)}</div></div></div>
+  </div>
+  <div class="card"><h3>聽聽牠的聲音</h3>${sound}</div>
+  <div class="card"><h3>看更多</h3>
+    <div class="linkrow">${more.join("")}</div>
+    <div class="vids">${vids}</div>
+    <p class="credit" style="margin-top:12px">照片：${esc(m.img.author)}，${lic}，<a href="${m.img.page}" target="_blank" rel="noopener">Wikimedia Commons</a></p>
+  </div>
+  <div class="ans-nav"><button class="btn ghost" id="aBack2">回到提示</button><button class="btn" id="aNext2">下一隻</button></div>`;
+  bindPlayers($("#ansBody")); setIcons();
+  $$("[data-yt]").forEach(t=>{const go=()=>{t.innerHTML=`<iframe src="https://www.youtube-nocookie.com/embed/${t.dataset.yt}?autoplay=1&rel=0" title="YouTube 影片" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>`;stopAudio()};t.onclick=go;t.onkeydown=e=>{if(e.key==="Enter")go()}});
+  $("#aBack2").onclick=$("#aBack").onclick=()=>show("quiz");
+  $("#aNext2").onclick=$("#aNext").onclick=()=>goNext();
+  $("#aProg").innerHTML=`<span class="hide-s">第 </span>${st.pos+1}<span class="hide-s"> 隻</span> / ${st.list.length}`;
+  const last=st.pos>=st.list.length-1;
+  $("#aNext").textContent=$("#aNext2").textContent= last?"看圖鑑":"下一隻";
+  show("answer");
+  history.replaceState(null,"","#"+b.key);
+}
+
+/* ---------- 圖鑑 ---------- */
+function renderGallery(){
+  const F=[["all","全部"],...Object.entries(GROUP),["good","益蟲"],["pest","害蟲"]];
+  $("#gFilter").innerHTML=F.map(([v,t])=>`<button class="chip${st.filter===v?" on":""}" data-v="${v}">${t}</button>`).join("");
+  $$("#gFilter button").forEach(x=>x.onclick=()=>{st.filter=x.dataset.v;renderGallery()});
+  const list=B.filter(b=>inFilter(b,st.filter));
+  $("#gGrid").innerHTML=list.map(b=>`<button class="gitem" data-k="${b.key}"><img src="assets/img/${b.key}.jpg" alt="${esc(b.name)}" loading="lazy"><b>${esc(b.name)}</b><span>${esc(b.sci)}</span></button>`).join("");
+  $$("#gGrid .gitem").forEach(x=>x.onclick=()=>{buildList(x.dataset.k);openQuiz()});
+}
+
+/* ---------- 聲音頁 ---------- */
+const withSnd=B.filter(b=>M[b.key].snd);
+$("#sGame").innerHTML=shuffle([...withSnd]).map((b,i)=>`<div class="sitem">${playerHTML(b.key)}<div class="who" id="who-${b.key}"><button class="chip" data-ans="${b.key}">第 ${i+1} 段：看答案</button></div></div>`).join("");
+bindPlayers($("#sGame"));
+$$("[data-ans]").forEach(x=>x.onclick=()=>{const b=B.find(y=>y.key===x.dataset.ans);$("#who-"+b.key).innerHTML=`<b>${esc(b.name)}</b>　<span class="credit">${esc(M[b.key].snd.note)}</span>`});
+$("#sndTable").innerHTML="<tr><th>昆蟲</th><th>會發出什麼聲音</th><th>本頁錄音</th></tr>"+B.map(b=>{const s=M[b.key].snd;return `<tr><td>${esc(b.name)}</td><td>${esc(b.hints.sound)}</td><td>${s?`有：${esc(s.rec)}，<a href="${s.url}" target="_blank" rel="noopener">${esc(s.src)}</a>，${esc(s.lic)}`:"沒有"}</td></tr>`}).join("");
+
+/* ---------- 來源表 ---------- */
+const DC=window.DECO||{};
+$("#imgTable").innerHTML="<tr><th>昆蟲</th><th>攝影者</th><th>授權</th><th>原始檔案</th></tr>"+B.map(b=>{const i=M[b.key].img;return `<tr><td>${esc(b.name)}</td><td>${esc(i.author)}</td><td>${i.licurl?`<a href="${i.licurl}" target="_blank" rel="noopener">${esc(i.lic)}</a>`:esc(i.lic)}</td><td><a href="${i.page}" target="_blank" rel="noopener">Commons</a></td></tr>`}).join("")
+ +Object.entries(DC).map(([k,i])=>`<tr><td>裝飾：${esc(decodeURIComponent(i.page.split("File:")[1]||k).replace(/_/g," ").replace(/\.\w+$/,""))}</td><td>${esc(i.author)}</td><td>${i.licurl?`<a href="${i.licurl}" target="_blank" rel="noopener">${esc(i.lic)}</a>`:esc(i.lic)}</td><td><a href="${i.page}" target="_blank" rel="noopener">Commons</a></td></tr>`).join("");
+
+/* ---------- 鍵盤 ---------- */
+addEventListener("keydown",e=>{
+  if(e.target.closest("input,textarea")) return;
+  const q=$("#quiz").classList.contains("on"), a=$("#answer").classList.contains("on");
+  if(q&&(e.key===" "||e.key==="ArrowDown")){e.preventDefault();nextHint()}
+  else if(q&&e.key==="Enter"&&!e.target.closest("button")){e.preventDefault();showAnswer()}
+  else if((q||a)&&e.key==="ArrowRight"){goNext()}
+  else if(q&&e.key==="ArrowLeft"){$("#qPrev").click()}
+  else if(e.key==="Escape"){show("home")}
+});
+
+/* ---------- 網址 #key 直接開 ---------- */
+function fromHash(){const hk=decodeURIComponent(location.hash.slice(1)); if(hk && B.some(b=>b.key===hk) && !(st.list.length && cur().key===hk && !$("#home").classList.contains("on"))){buildList(hk);openQuiz()}}
+fromHash(); addEventListener("hashchange",fromHash);
+})();
+</script>
+</body>
+</html>
