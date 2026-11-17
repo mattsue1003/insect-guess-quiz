@@ -104,6 +104,9 @@ body.inner #deco .bug.near{opacity:0}
 .hbtn .n{font-family:var(--latin);font-weight:400;font-size:15px;width:28px;height:28px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;flex:none}
 .hbtn.used{background:var(--soft);color:var(--mute);border-color:var(--hair)}
 .hbtn.used .n{background:var(--ink);color:#fff;border-color:var(--ink)}
+.hbtn.cur{background:#fff;color:var(--ink);border-color:var(--leaf);box-shadow:inset 0 0 0 1.5px var(--leaf)}
+.hbtn.cur .n{background:var(--leaf);border-color:var(--leaf)}
+.hints li[hidden]{display:none}
 .hints{list-style:none;margin:16px 0 0;padding:0;display:flex;flex-direction:column;gap:10px}
 .hints li{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;background:#fff;border-left:3px solid var(--leaf);animation:fade .35s ease;font-size:20px;line-height:1.6}
 .tag{flex:none;font-size:14px;letter-spacing:.12em;border:1px solid var(--hair);padding:2px 8px;color:var(--ink2);margin-top:4px;white-space:nowrap}
@@ -271,7 +274,7 @@ table.cr th{font-weight:500;color:var(--ink2);white-space:nowrap}
       <p class="qsub">按下按鈕，一次打開一個提示。猜到了就揭曉！</p>
       <div class="hint-btns" id="hintBtns"></div>
       <ul class="hints" id="hintList"></ul>
-      <p class="empty-tip" id="emptyTip">小技巧：先讓大家自由說說看「牠長什麼樣子、在哪裡看過」，再打開第一個提示。<br>鍵盤：<span class="kbd">空白鍵</span> 下一個提示　<span class="kbd">Enter</span> 揭曉　<span class="kbd">→</span> 下一隻</p>
+      <p class="empty-tip" id="emptyTip">小技巧：先讓大家自由說說看「牠長什麼樣子、在哪裡看過」，再打開第一個提示。一次只顯示一個提示，按已打開過的按鈕可以再看一次。<br>鍵盤：<span class="kbd">空白鍵</span> 下一個提示　<span class="kbd">Enter</span> 揭曉　<span class="kbd">→</span> 下一隻</p>
       <div class="reveal-row">
         <button class="btn" id="revealBtn">揭曉答案</button>
       </div>
@@ -516,8 +519,14 @@ function openQuiz(){
   show("quiz");
   history.replaceState(null,"","#"+b.key);
 }
+function focusHint(k,force){
+  const lis=$$("#hintList li"), open=lis.find(l=>l.dataset.k===k);
+  const same=!force && open && !open.hidden && lis.filter(l=>!l.hidden).length===1;
+  lis.forEach(l=>l.hidden = same || l.dataset.k!==k);
+  $$("#hintBtns .hbtn").forEach(x=>x.classList.toggle("cur", !same && x.dataset.h===k));
+}
 function reveal(k){
-  const b=cur(); if(st.used.includes(k)) return;
+  const b=cur(); if(st.used.includes(k)){ focusHint(k); return; }
   st.used.push(k);
   $(`#hintBtns [data-h="${k}"]`).classList.add("used");
   $("#emptyTip").style.display="none";
@@ -528,8 +537,9 @@ function reveal(k){
   else if(k==="sound"){ html=esc(b.hints.sound)+(M[b.key].snd?` <button class="mini-play" data-play="${b.key}">▶ 播放聲音</button>`:""); }
   else html=esc(b.hints[k]);
   const li=document.createElement("li");
+  li.dataset.k=k;
   li.innerHTML=`<span class="tag">${h?h.tag:"選項"}</span><div>${html}</div>`;
-  $("#hintList").appendChild(li);
+  $("#hintList").appendChild(li); focusHint(k,true);
   li.querySelectorAll(".choices button").forEach(c=>c.onclick=()=>{
     if(c.dataset.c===b.name){c.classList.add("right");setTimeout(()=>showAnswer(),700)}else c.classList.add("wrong");
   });
