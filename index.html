@@ -91,8 +91,8 @@ body.inner #deco .bug.near{opacity:0}
 .photo-wrap{position:relative;padding:14px 14px 0 0}
 .photo-wrap::after{content:"";position:absolute;inset:0 0 14px 14px;border:1.5px solid var(--line);pointer-events:none;z-index:2}
 .photo{position:relative;aspect-ratio:4/3;overflow:hidden;background:#e9e9e3}
-.photo img{width:100%;height:100%;object-fit:cover;display:block;transition:filter .7s ease,transform .7s ease}
-.photo.contain img{object-fit:contain;background:#fff}
+.photo::before{content:"";position:absolute;inset:-12%;background:var(--bg) center/cover no-repeat;filter:blur(28px) saturate(.9);opacity:.5}
+.photo img{position:relative;width:100%;height:100%;object-fit:contain;display:block;transition:filter .7s ease,transform .7s ease}
 .qnum{position:absolute;left:30px;bottom:30px;z-index:3;font-family:var(--latin);font-weight:300;font-size:15px;letter-spacing:.3em;background:rgba(255,255,255,.88);padding:4px 12px;color:var(--ink2)}
 .zoomtag{position:absolute;right:28px;top:26px;z-index:3;font-size:14px;letter-spacing:.15em;background:rgba(255,255,255,.88);padding:3px 10px;color:var(--ink2)}
 .card{background:rgba(255,255,255,.92);border:1px solid var(--hair);padding:clamp(18px,2.4vw,28px)}
@@ -177,7 +177,9 @@ h3::before{content:"";width:18px;height:1.5px;background:var(--line);flex:none}
 .ggrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px}
 .gitem{display:flex;flex-direction:column;align-items:stretch;padding:0;border:1px solid var(--hair);background:#fff;cursor:pointer;text-align:left;transition:transform .15s,border-color .15s}
 .gitem:hover{border-color:var(--line);transform:translateY(-2px)}
-.gitem img{aspect-ratio:4/3;object-fit:cover;width:100%;display:block}
+.gph{position:relative;display:block;aspect-ratio:4/3;width:100%;overflow:hidden;background:#eef0ea}
+.gph::before{content:"";position:absolute;inset:-12%;background:var(--bg) center/cover no-repeat;filter:blur(16px) saturate(.9);opacity:.55}
+.gph img{position:relative;width:100%;height:100%;object-fit:contain;display:block}
 .gitem b{font-weight:500;font-size:20px;letter-spacing:.12em;padding:8px 12px 0}
 .gitem span{font-family:var(--latin);font-style:italic;font-size:14px;color:var(--mute);padding:0 12px 10px}
 .gitem .done{position:absolute}
@@ -503,7 +505,7 @@ function applyPhoto(){
 function openQuiz(){
   const b=cur(); st.used=[]; stopAudio();
   const img=$("#qImg"); img.style.transition="none"; img.src="assets/img/"+b.key+".jpg"; img.style.transformOrigin=b.focus||"50% 50%";
-  $("#qPhoto").classList.toggle("contain", b.key==="stag");
+  $("#qPhoto").style.setProperty("--bg",`url('assets/img/${b.key}.jpg')`);
   $("#qProg").innerHTML=`<span class="hide-s">第 </span>${st.pos+1}<span class="hide-s"> 隻</span> / ${st.list.length}`;
   $("#qNum").textContent=String(st.pos+1).padStart(2,"0")+" / "+String(st.list.length).padStart(2,"0");
   $("#hintList").innerHTML=""; $("#emptyTip").style.display="";
@@ -575,7 +577,7 @@ function showAnswer(){
   if(b.group==="singer") more.push(`<a class="chip" href="https://xeno-canto.org/explore?query=${encodeURIComponent(b.sci.split(" ")[0])}" target="_blank" rel="noopener">${ICON_EXT}xeno-canto 更多錄音</a>`);
   $("#ansBody").innerHTML=`
   <div class="ans-hero">
-    <div class="photo-wrap"><div class="photo${b.key==="stag"?" contain":""}"><img src="assets/img/${b.key}.jpg" alt="${esc(b.name)}"></div></div>
+    <div class="photo-wrap"><div class="photo" style="--bg:url('assets/img/${b.key}.jpg')"><img src="assets/img/${b.key}.jpg" alt="${esc(b.name)}"></div></div>
     <div class="card">
       <div class="ans-eyebrow">${esc(praise)}，答案是</div>
       <div class="ans-name">${esc(b.name)}</div>
@@ -622,7 +624,7 @@ function renderGallery(){
   $("#gFilter").innerHTML=F.map(([v,t])=>`<button class="chip${st.filter===v?" on":""}" data-v="${v}">${t}</button>`).join("");
   $$("#gFilter button").forEach(x=>x.onclick=()=>{st.filter=x.dataset.v;renderGallery()});
   const list=B.filter(b=>inFilter(b,st.filter));
-  $("#gGrid").innerHTML=list.map(b=>`<button class="gitem" data-k="${b.key}"><img src="assets/img/${b.key}.jpg" alt="${esc(b.name)}" loading="lazy"><b>${esc(b.name)}</b><span>${esc(b.sci)}</span></button>`).join("");
+  $("#gGrid").innerHTML=list.map(b=>`<button class="gitem" data-k="${b.key}"><span class="gph" style="--bg:url('assets/img/${b.key}.jpg')"><img src="assets/img/${b.key}.jpg" alt="${esc(b.name)}" loading="lazy"></span><b>${esc(b.name)}</b><span>${esc(b.sci)}</span></button>`).join("");
   $$("#gGrid .gitem").forEach(x=>x.onclick=()=>{buildList(x.dataset.k);openQuiz()});
 }
 
